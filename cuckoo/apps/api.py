@@ -14,7 +14,7 @@ import tarfile
 import zipfile
 
 from flask import Flask, request, jsonify, make_response, abort, json
-
+from flask_cors import CORS
 from cuckoo.common.config import config, parse_options
 from cuckoo.common.files import Files, Folders
 from cuckoo.common.utils import parse_bool, constant_time_compare
@@ -30,6 +30,7 @@ sm = SubmitManager()
 
 # Initialize Flask app.
 app = Flask(__name__)
+cors= CORS(app, resources={r"/*": {"origins": "*", "allow_headers": "*", "expose_headers": "*"}})
 
 def json_error(status_code, message):
     """Return a JSON object with a HTTP error code."""
@@ -50,10 +51,10 @@ def shutdown_server():
 def custom_headers(response):
     """Set some custom headers across all HTTP responses."""
     response.headers["Server"] = "Machete Server"
-    response.headers["X-Content-Type-Options"] = "nosniff"
-    response.headers["X-Frame-Options"] = "DENY"
-    response.headers["X-XSS-Protection"] = "1; mode=block"
-    response.headers["Pragma"] = "no-cache"
+    #response.headers["X-Content-Type-Options"] = "nosniff"
+    #response.headers["X-Frame-Options"] = "DENY"
+    #response.headers["X-XSS-Protection"] = "1; mode=block"
+    #response.headers["Pragma"] = "no-cache"
     response.headers["Cache-Control"] = "no-cache"
     response.headers["Expires"] = "0"
     return response
@@ -702,7 +703,8 @@ def check_authentication():
         expect = "Bearer " + token
         auth = request.headers.get("Authorization")
         if not constant_time_compare(auth, expect):
-            abort(401)
+                if not request.method == 'OPTIONS':
+                        abort(401)
 
 def cuckoo_api(hostname, port, debug):
     if not config("cuckoo:cuckoo:api_token"):
